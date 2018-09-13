@@ -1,0 +1,71 @@
+
+<div ng-app="eburun" ng-controller="eburunCtrl">
+  <div class="row">
+    <form name="koklamaFormu">
+      <label>
+         Koklama İsmi:
+         <input type="text" name="koklamaIsmi" ng-model="koklamaIsmi">
+         Saat/Dakika:
+         <input type="number" name="koklamaSaati" ng-model="koklamaSaati" min="1">
+         <input type="number" name="koklamaDakikasi" ng-model="koklamaDakikasi" min="1">
+         <!--Saat: {{koklamaSaati}},
+         Dakika: {{koklamaDakikasi}}-->
+      </label>
+      <div>
+        <button ng-if="!koklamaBittiMi" ng-click="koklamayaBasla()">Koklamaya Başla</button>
+        <div ng-if="koklamaBittiMi">Bitti!</div>
+      </div>
+    </form>
+    <ul>
+      <li ng-repeat="koklama in koklamaListesi">
+          <a ng-click="selectTest(koklama)" href="javascript:;">
+              <!--<i class="icon-home"></i>-->
+              <span class="title">{{koklama}}</span>
+          </a>
+      </li>
+    </ul>
+  </div>
+  </div>
+</div>
+<link href="/bower_components/c3/c3.min.css" rel="stylesheet" type="text/css" />
+
+<script src="/bower_components/d3/d3.min.js" charset="utf-8"></script>
+<script src="/bower_components/c3/c3.min.js"></script>
+<script src="/bower_components/angular/angular.min.js"></script>
+<script src="/bower_components/c3-angular/c3-angular.min.js"></script>
+
+<script>
+  angular.module("eburun", ['gridshore.c3js.chart'])
+    .controller("eburunCtrl", function ($scope, $http, $timeout) {
+      $scope.fileName = "/static/logs/infolog.json";
+      $scope.koklamaSaati = null;
+      $scope.koklamaDakikasi = null;
+      $scope.koklamaBittiMi = false;
+      $scope.koklamaIsmi = "";
+      $scope.koklamalariGetir = function(){
+          $http.get("koklamalariGetir").then(function (response) {
+              console.log("Success List ");
+              console.log(response.data);
+              $scope.koklamaListesi = response.data;
+          }).catch(function (error) {
+              console.log("Error ", error);
+          });
+        };
+      $scope.koklamayaBasla = function(){
+        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi};
+
+        console.log("formData", formData);
+        if($scope.koklamaIsmi && ($scope.koklamaDakikasi || $scope.koklamaSaati)){
+          $http.post("kokla", formData)
+          .then(function (response) {
+            console.log('Data posted successfully', response);
+            $scope.koklamaBittiMi = true;
+            $scope.koklamalariGetir();
+          }).catch(function (error) {
+            console.log("Error ", error);
+          });
+        }
+      }
+      $scope.koklamalariGetir();
+    });
+</script>
