@@ -2,6 +2,7 @@ const express = require('express')
 var bodyParser = require("body-parser");
 var serialport = require('serialport');
 var createInterface = require('readline').createInterface;
+var synaptic = require('synaptic');
 var options = {
 	baudRate: 9600,
 	bufferSize: 1024
@@ -15,6 +16,9 @@ app.use(bodyParser.json());
 app.use('/src', express.static('src'))
 app.use('/node_modules', express.static('node_modules'))
 app.use('/bower_components', express.static('bower_components'))
+
+const { Layer, Network } = require('synaptic');
+
 app.get('/src/koklamalariGetir', function(req,res){
 	fs.readdir(applicationDir + "\\src\\koklamalar\\", function (err, files) {
     if (err) {
@@ -24,6 +28,38 @@ app.get('/src/koklamalariGetir', function(req,res){
     res.send(files);
 	});
 });
+
+app.post('/src/ogren', function(req, res){
+	var inputLayer = new Layer(7);
+	var hiddenLayer = new Layer(3);
+	var outputLayer = new Layer(1);
+
+	inputLayer.project(hiddenLayer);
+	hiddenLayer.project(outputLayer);
+	var myNetwork = new Network({
+	 input: inputLayer,
+	 hidden: [hiddenLayer],
+	 output: outputLayer
+	});
+
+	// train the network - learn XOR
+	var learningRate = .3;
+	for (var i = 0; i < 20000; i++) {
+	  // 0,0 => 0
+	  myNetwork.activate([0,0]);
+	  myNetwork.propagate(learningRate, [0]);
+	  // 0,1 => 1
+	  myNetwork.activate([0,1]);
+	  myNetwork.propagate(learningRate, [1]);
+	  // 1,0 => 1
+	  myNetwork.activate([1,0]);
+	  myNetwork.propagate(learningRate, [1]);
+	  // 1,1 => 0
+	  myNetwork.activate([1,1]);
+	  myNetwork.propagate(learningRate, [0]);
+	}
+});
+
 app.post('/src/kokla', function(req, res){
 	console.log('body:', JSON.stringify(req.body));
 	var sure = 0;
