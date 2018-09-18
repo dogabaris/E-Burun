@@ -164,7 +164,7 @@ body {
 <div ng-app="eburun" class="col-lg-12 col-md-12" ng-controller="eburunCtrl">
   <div class="row">
   <div class="col-lg-3 col-md-3">
-  <div class="nav-side-menu">
+  <div class="nav-side-menu" style="left: 0px;">
     <div class="brand">Menü</div>
     <i class="fa fa-bars fa-2x toggle-btn" data-toggle="collapse" data-target="#menu-content"></i>
         <div class="menu-list">
@@ -175,13 +175,17 @@ body {
                   </a>
                 </li>
 
-                <li  data-toggle="collapse" data-target="#products" class="collapsed active">
+                <li  data-toggle="collapse" data-target="#projeler" class="active">
                   <a href="#"><i class="fa fa-file fa-lg"></i> Projeler <span class="arrow"></span></a>
                 </li>
-                <ul class="sub-menu collapse" id="products">
-                    <li class="active"><a href="#">Proje1</a></li>
+                <ul class="sub-menu collapse in" id="projeler">
+                    <li ng-click="projeSec(proje)" ng-repeat="proje in projeListesi">
+                      <a href="javascript:;">
+                          {{proje}}
+                      </a>
+                    </li>
                 </ul>
-                <li  data-toggle="collapse" data-target="#koklamalar" class="collapsed active">
+                <!--<li  data-toggle="collapse" data-target="#koklamalar" class="collapsed active">
                   <a href="#"><i class="fa fa-cogs"></i> Koklamalar <span class="arrow"></span></a>
                 </li>
                 <ul class="sub-menu collapse" id="koklamalar">
@@ -190,12 +194,18 @@ body {
                         {{koklama}}
                     </a>
                 </li>
-                </ul>
+                </ul>-->
             </ul>
      </div>
   </div>
   </div>
   <div style="padding-top: 25px;" class="col-lg-4 col-md-4">
+       Seçilen Proje: {{secilenProje}}
+       <br>
+       <br>
+       Proje Koklamaları: {{koklamaListesi.toString()}}
+       <br>
+       <br>
        Koklama İsmi:
        <input type="text" placeholder="Örn. Zeytinyagi1" class="form-control" name="koklamaIsmi" ng-model="koklamaIsmi">
        Saat/Dakika:
@@ -203,8 +213,8 @@ body {
        <input type="number" placeholder="Örn. 1" class="form-control" name="koklamaSaati" style="width: 80px;" ng-model="koklamaSaati" min="1">
        <input type="number" placeholder="Örn. 1" class="form-control" name="koklamaDakikasi" style="width: 80px;" ng-model="koklamaDakikasi" min="1">
        </div>
-      <button ng-if="!koklamaBittiMi" class="btn btn-info navbar-btn" ng-click="koklamayaBasla()">Koklamaya Başla</button>
-      <div ng-if="koklamaBittiMi">Bitti!</div>
+      <button ng-if="koklamaBittiMi==0 || koklamaBittiMi==2" class="btn btn-info navbar-btn" ng-click="koklamayaBasla()">Koklamaya Başla</button>
+      <img ng-if="koklamaBittiMi==1" src="/src/assets/loading.gif" width="120px">
   </div>
   <div style="padding-top: 25px;" class="col-lg-3 col-md-3">
     <div class="dropdown">
@@ -238,7 +248,7 @@ body {
        Gizli Katman:
        <input type="number" placeholder="Örn. 1" class="form-control" name="gizliKatman" style="width: 80px;" step="1" ng-model="gizliKatman" min="1">
     <div>
-      <button ng-if="!koklamaBittiMi" class="btn btn-info navbar-btn" ng-click="ogren()">Öğren</button>
+      <button class="btn btn-info navbar-btn" ng-click="ogren()">Öğren</button>
     </div>
 
   </div>
@@ -256,33 +266,60 @@ body {
       $scope.fileName = "/static/logs/infolog.json";
       $scope.koklamaSaati = null;
       $scope.koklamaDakikasi = null;
-      $scope.koklamaBittiMi = false;
+      $scope.koklamaBittiMi = 0;
+      $scope.projeListesi = [];
+      $scope.koklamaListesi = [];
       $scope.koklamaIsmi = "";
+      $scope.secilenProje = "";
+      $scope.projeSec = function(proje){
+        $scope.secilenProje = proje;
+        $scope.koklamalariGetir();
+      }
+      $scope.projeleriGetir = function(){
+        $http.get("projeleriGetir").then(function (response) {
+              console.log("Project List ");
+              console.log(response.data);
+              for (var i = 0; i < response.data.length; i++) {
+                var folderPaths = response.data[i][0].split("\\");
+                $scope.projeListesi.push(folderPaths[folderPaths.length-1]);
+              }
+              console.log($scope.projeListesi);
+          }).catch(function (error) {
+              console.log("Error ", error);
+          });
+      }
       $scope.koklamalariGetir = function(){
-          $http.get("koklamalariGetir").then(function (response) {
+        var proje = {'proje':$scope.secilenProje};
+        $scope.koklamaListesi = [];
+          $http.post("koklamalariGetir", proje).then(function (response) {
               console.log("Success List ");
               console.log(response.data);
-              $scope.koklamaListesi = response.data;
+              for (var i = 0; i < response.data.length; i++) {
+                var splittedKoklamalar = response.data[i].split(".json");
+                $scope.koklamaListesi.push(splittedKoklamalar[0]);
+              }
           }).catch(function (error) {
               console.log("Error ", error);
           });
         };
       $scope.koklamayaBasla = function(){
-        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi};
+        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'proje': $scope.secilenProje, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi};
 
         console.log("formData", formData);
         if($scope.koklamaIsmi && ($scope.koklamaDakikasi || $scope.koklamaSaati)){
+          $scope.koklamaBittiMi = 1;
           $http.post("kokla", formData)
           .then(function (response) {
             console.log('Data posted successfully', response);
-            $scope.koklamaBittiMi = true;
+            $scope.koklamaBittiMi = 2;
             $scope.koklamalariGetir();
           }).catch(function (error) {
             console.log("Error ", error);
           });
         }
       }
-      $scope.koklamalariGetir();
+      //$scope.koklamalariGetir();
+      $scope.projeleriGetir();
       $scope.ogren = function(){
 
         $http.post("ogren", formData)

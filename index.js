@@ -18,9 +18,25 @@ app.use('/node_modules', express.static('node_modules'))
 app.use('/bower_components', express.static('bower_components'))
 
 const { Layer, Network } = require('synaptic');
+const { lstatSync, readdirSync } = require('fs')
+const { join } = require('path')
 
-app.get('/src/koklamalariGetir', function(req,res){
-	fs.readdir(applicationDir + "\\src\\koklamalar\\", function (err, files) {
+const isDirectory = source => lstatSync(source).isDirectory()
+const getDirectories = source =>
+  readdirSync(source).map(name => join(source, name)).filter(isDirectory)
+
+app.get('/src/projeleriGetir', function(req,res){
+	var projectDirs = fs.readdirSync(applicationDir + '\\src\\projeler')
+    	.map(file => path.join(applicationDir + '/src/projeler/', file))
+    	.filter(path => fs.statSync(path).isDirectory());
+    //projectDirs.map(x => x.split("/"));
+    //var projectNames = [].split("/")[projectDirs.length];
+	res.send(projectDirs.map(x => x.split("/")));
+});
+
+app.post('/src/koklamalariGetir', function(req,res){
+
+	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\", function (err, files) {
     if (err) {
         return console.log('Unable to scan directory: ' + err);
     }
@@ -98,7 +114,7 @@ app.post('/src/kokla', function(req, res){
 			  input: connectedPort
 	   	  });
 	   	  var emptyJson = "[]";//Öncelikle array json file oluşturulması gerek ki json ile içi append edilebilsin
-	   	  fs.writeFile(applicationDir + "\\src\\koklamalar\\" + req.body.koklamaIsmi + '.json', emptyJson, (err) => {
+	   	  fs.writeFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', emptyJson, (err) => {
 			    if (err) throw err;
 
 			    console.log("The file was succesfully saved!");
@@ -119,10 +135,10 @@ app.post('/src/kokla', function(req, res){
 				lineJson['sensor7'] = splitLine[8];
 				lineJson['tarih'] = new Date();
 
-			  	fs.readFile(applicationDir + "\\src\\koklamalar\\" + req.body.koklamaIsmi + '.json', function (err, data) {
+			  	fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', function (err, data) {
 				    var json = JSON.parse(data);
 				    json.push(lineJson);
-				    fs.writeFile(applicationDir + "\\src\\koklamalar\\" + req.body.koklamaIsmi + '.json', JSON.stringify(json), function(err){
+				    fs.writeFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', JSON.stringify(json), function(err){
 				      if (err) throw err;
 				      //console.log('The "data to append" was appended to file!');
 				    });
@@ -132,7 +148,7 @@ app.post('/src/kokla', function(req, res){
 		  	  connectedPort.close();
 			  var sensor1Alan=0, sensor2Alan=0, sensor3Alan=0, sensor4Alan=0, sensor5Alan=0, sensor6Alan=0, sensor7Alan=0;
 
-		  	  fs.readFile(applicationDir + "\\src\\koklamalar\\" + req.body.koklamaIsmi + '.json', function (err, koklamaData) {
+		  	  fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', function (err, koklamaData) {
 				    var koklamaJson = JSON.parse(koklamaData);
 				    for (var i = 0; i < koklamaJson.length; i++) {
 				    	if (koklamaJson[i+1]) {
@@ -164,7 +180,7 @@ app.post('/src/kokla', function(req, res){
 				    	}
 				    }
 				    console.log("sensor1 Nihai Alan", sensor1Alan);
-				    fs.readFile(applicationDir + "\\src\\koklamalar\\" + req.body.koklamaIsmi + '.json', function (err, data) {
+				    fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', function (err, data) {
 					    var json = JSON.parse(data);
 					    var alanJson = {};
 					    alanJson['sensor1Alan'] = sensor1Alan;
@@ -175,7 +191,7 @@ app.post('/src/kokla', function(req, res){
 					    alanJson['sensor6Alan'] = sensor6Alan;
 					    alanJson['sensor7Alan'] = sensor7Alan;
 					    json.push(alanJson);
-					    fs.writeFile(applicationDir + "\\src\\koklamalar\\" + req.body.koklamaIsmi + '.json', JSON.stringify(json), function(err){
+					    fs.writeFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', JSON.stringify(json), function(err){
 					      if (err) throw err;
 					      //console.log('The "data to append" was appended to file!');
 					    });
