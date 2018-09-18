@@ -162,16 +162,42 @@ body {
 </head>
 <body>
 <div ng-app="eburun" class="col-lg-12 col-md-12" ng-controller="eburunCtrl">
+  <!-- The Modal -->
+  <div class="modal" id="yeniProjeModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h4 class="modal-title">Yeni Proje Oluştur</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <!-- Modal body -->
+        <div class="modal-body">
+          Proje Adı:
+          <input type="text" placeholder="Örn. Zeytin Yağı Projesi" class="form-control" name="yeniProjeIsmi" ng-model="yeniProjeIsmi">
+        </div>
+
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Kapat</button>
+          <button type="button" class="btn btn-success" ng-click="yeniProjeOlustur()" data-dismiss="modal">Oluştur</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
   <div class="row">
   <div class="col-lg-3 col-md-3">
   <div class="nav-side-menu" style="left: 0px;">
     <div class="brand">Menü</div>
-    <i class="fa fa-bars fa-2x toggle-btn" data-toggle="collapse" data-target="#menu-content"></i>
+    <i class="fa fa-bars fa-2x toggle-btn"  data-toggle="collapse" data-target="#menu-content"></i>
         <div class="menu-list">
             <ul id="menu-content" class="menu-content collapse out">
-                <li>
+                <li data-toggle="modal" data-target="#yeniProjeModal">
                   <a href="#">
-                  <i class="fa fa-plus fa-lg"></i> Yeni Proje Ekle
+                  <i class="fa fa-plus fa-lg"></i> Yeni Proje Oluştur
                   </a>
                 </li>
 
@@ -195,6 +221,7 @@ body {
                     </a>
                 </li>
                 </ul>-->
+
             </ul>
      </div>
   </div>
@@ -203,7 +230,13 @@ body {
        Seçilen Proje: {{secilenProje}}
        <br>
        <br>
-       Proje Koklamaları: {{koklamaListesi.toString()}}
+       Proje Koklamaları: 
+       <li ng-repeat="koklama in koklamaListesi">
+                    <a ng-click="koklamaChartiGoster(koklama)" href="javascript:;">
+                        {{koklama}}
+                    </a>
+       </li>
+       <!--{{koklamaListesi.toString()}}-->
        <br>
        <br>
        Koklama İsmi:
@@ -215,6 +248,12 @@ body {
        </div>
       <button ng-if="koklamaBittiMi==0 || koklamaBittiMi==2" class="btn btn-info navbar-btn" ng-click="koklamayaBasla()">Koklamaya Başla</button>
       <img ng-if="koklamaBittiMi==1" src="/src/assets/loading.gif" width="120px">
+      <br>
+      <br>
+      {{secilenKoklama}} Koklama Verileri:
+      <br>
+      <c3chart bindto-id="chart">
+      </c3chart>
   </div>
   <div style="padding-top: 25px;" class="col-lg-3 col-md-3">
     <div class="dropdown">
@@ -269,8 +308,75 @@ body {
       $scope.koklamaBittiMi = 0;
       $scope.projeListesi = [];
       $scope.koklamaListesi = [];
+      $scope.secilenKoklama = "";
       $scope.koklamaIsmi = "";
       $scope.secilenProje = "";
+      $scope.chart = null;
+      $scope.yeniProjeIsmi = "";
+      $scope.yeniProjeOlustur = function() {
+        var data = {'projeAdi': $scope.yeniProjeIsmi};
+        $http.post("yeniProjeOlustur", data).then(function (response) {
+          if (response.data=="Başarılı") {
+            $scope.projeListesi = [];
+            $scope.projeleriGetir();
+          }
+        }).catch(function (error) {
+              console.log("Error ", error);
+        });
+      }
+      $scope.koklamaChartiGoster = function(koklama){
+        var sensor1 = [],sensor2 = [],sensor3 = [],sensor4 = [],sensor5 = [],sensor6 = [],sensor7 = [],tarih = [];
+        var data = {'proje':$scope.secilenProje, 'koklama': koklama};
+        $scope.secilenKoklama = koklama;
+        $http.post("koklamaChartiGoster", data).then(function (response) {
+              console.log("Success Chart List ");
+              console.log(response.data);
+              console.log("ilk sensor1", response.data[0].sensor1);
+              for (var k = 0; k < response.data.length; k++) {
+                sensor1.push(response.data[k].sensor1);
+                sensor2.push(response.data[k].sensor2);
+                sensor3.push(response.data[k].sensor3);
+                sensor4.push(response.data[k].sensor4);
+                sensor5.push(response.data[k].sensor5);
+                sensor6.push(response.data[k].sensor6);
+                sensor7.push(response.data[k].sensor7);
+                tarih.push(response.data[k].tarih);
+              }
+              //console.log("sensor1 ve tarih", sensor1, tarih);
+
+              $scope.chart = c3.generate({
+                  bindto: '#chart',
+                  data: {
+                    json: response.data,
+                    keys: {
+                      x: 'tarih', // it's possible to specify 'x' when category axis
+                      value: ['sensor1', 'sensor2','sensor3','sensor4','sensor5','sensor6','sensor7']
+                    }
+                  },
+                  axis: {
+                    x: {
+                       type: 'category'
+                    }
+                  }
+              });
+              /*
+              data: {
+                    x: 'tarih',
+                    columns: [
+                      ['tarih', tarih],
+                      ['sensor1',sensor1],
+                      ['sensor2',sensor2],
+                      ['sensor3',sensor3],
+                      ['sensor4',sensor4],
+                      ['sensor5',sensor5],
+                      ['sensor6',sensor6],
+                      ['sensor7',sensor7]
+                    ]
+                  }*/
+          }).catch(function (error) {
+              console.log("Error ", error);
+          });
+      }
       $scope.projeSec = function(proje){
         $scope.secilenProje = proje;
         $scope.koklamalariGetir();

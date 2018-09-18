@@ -75,6 +75,24 @@ app.post('/src/ogren', function(req, res){
 	  myNetwork.propagate(learningRate, [0]);
 	}
 });
+app.post('/src/yeniProjeOlustur', function(req, res){
+	console.log('body:', JSON.stringify(req.body));
+	console.log('path', applicationDir + "\\src\\projeler\\" + req.body.projeAdi);
+	var dir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi;
+	if (!fs.existsSync(dir)){
+	    fs.mkdirSync(dir);
+	    res.send("Başarılı");
+	}
+	res.send("Proje bulunmaktadır.");
+});
+app.post('/src/koklamaChartiGoster', function(req, res){
+	console.log('body:', JSON.stringify(req.body));
+
+	fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklama + '.json', function (err, data) {
+	    var json = JSON.parse(data);
+	    res.send(json);
+	});
+});
 
 app.post('/src/kokla', function(req, res){
 	console.log('body:', JSON.stringify(req.body));
