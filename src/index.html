@@ -266,6 +266,7 @@ body {
  <div class="row">
     <div class="col-lg-8 col-md-8" style="padding-top: 25px;">
     <h4>2- YSA Eğitimi</h4>
+    <!--
     <div class="dropdown">
       <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
         Eğitim Koklamaları
@@ -291,13 +292,17 @@ body {
                     </a>
         </li>
       </ul>
-    </div>
-        Learning Rate:       
-       <input type="number" placeholder="Örn. 0.3" class="form-control" name="learningRate" style="width: 80px;" step="any" ng-model="learningRate">
-       Gizli Katman:
-       <input type="number" placeholder="Örn. 1" class="form-control" name="gizliKatman" style="width: 80px;" step="1" ng-model="gizliKatman" min="1">
+    </div>-->
+       Öğrenme Oranı:       
+       <input type="number" placeholder="Örn. 0.03" class="form-control" name="ogrenmeOrani" style="width: 170px;" step="any" ng-model="ogrenmeOrani">
+       Gizli Katman Hücre Sayısı:
+       <input type="number" placeholder="Örn. 8" class="form-control" name="gizliKatmanHucreSayisi" style="width: 170px;" step="1" ng-model="gizliKatmanHucreSayisi" min="1">
+       Hata Oranı:
+       <input type="number" placeholder="Örn. 0.000005" class="form-control" name="hataOrani" step="any" style="width: 170px;" ng-model="hataOrani">
+       Maksimum Devir (Epoch) Sayısı:
+       <input type="number" placeholder="Örn. 40000" class="form-control" name="epochSayisi" style="width: 170px;" step="1" ng-model="epochSayisi" min="1">
     <div>
-      <button class="btn btn-info navbar-btn" ng-click="ogren()">Öğren</button>
+      <button class="btn btn-info navbar-btn" ng-click="ogren()">YSA Eğitimine Başla</button>
     </div>
   </div>
   </div>
@@ -327,6 +332,10 @@ body {
       $scope.koklamaIsmi = "";
       $scope.secilenProje = "";
       $scope.chart = null;
+      $scope.ogrenmeOrani = 0.03;
+      $scope.gizliKatmanHucreSayisi = 8;
+      $scope.hataOrani = 0.000005;
+      $scope.epochSayisi = 40000;
       $scope.yeniProjeIsmi = "";
       $scope.yeniProjeOlustur = function() {
         var data = {'projeAdi': $scope.yeniProjeIsmi};
@@ -429,7 +438,8 @@ body {
       $scope.projeleriGetir();
       $scope.ogren = function(){
         if($scope.secilenProje){
-        var formData = {'projeIsmi':$scope.secilenProje};
+        var formData = {'projeIsmi': $scope.secilenProje, 'epochSayisi': $scope.epochSayisi, 'hataOrani': $scope.hataOrani, 'ogrenmeOrani': $scope.ogrenmeOrani, 'gizliKatmanHucreSayisi': $scope.gizliKatmanHucreSayisi};
+        console.log("formData", formData);
         $http.post("ogren", formData)
           .then(function (response) {
             console.log(response);

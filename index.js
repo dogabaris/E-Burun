@@ -18,7 +18,7 @@ app.use('/src', express.static('src'))
 app.use('/node_modules', express.static('node_modules'))
 app.use('/bower_components', express.static('bower_components'))
 
-const { Layer, Network, Architect, Trainer } = require('synaptic');
+const { Layer, Network, Architect, Trainer, Train } = require('synaptic');
 const { lstatSync, readdirSync } = require('fs')
 const { join } = require('path')
 
@@ -74,22 +74,55 @@ app.post('/src/ogren', function(req, res){
 		});
 	}).then(function(jsonTrainDatas) {
 		trainDatas = jsonTrainDatas;
-		console.log("data ", trainDatas);
+		//console.log("data ", trainDatas);
 
-		var inputLayer = new Layer(7);
-		var hiddenLayer = new Layer(8);//Gizli katman hücre sayısı
-		var outputLayer = new Layer(1);
+		//var inputLayer = new Layer(7);
+		//var hiddenLayer = new Layer(8);//Gizli katman hücre sayısı
+		//var outputLayer = new Layer(1);
 
-		inputLayer.project(hiddenLayer);
-		hiddenLayer.project(outputLayer);
+		//inputLayer.project(hiddenLayer);
+		//hiddenLayer.project(outputLayer);
 
-		var myNetwork = new Network({
-			input: inputLayer,
-			hidden: [hiddenLayer],
-			output: outputLayer
-		});
+		//var myNetwork = new Network({
+		//	input: inputLayer,
+		//	hidden: [hiddenLayer],
+		//	output: outputLayer
+		//});
 
-		var learningRate = .0003;
+		var myNet = new Architect.Perceptron(7, req.body.gizliKatmanHucreSayisi, 1);
+		var trainer = new Trainer(myNet);
+
+		var trainingSet = [];
+		for (var z = 0; z < trainDatas.length; z++) {
+			var json = {};
+			json["input"] = [trainDatas[z]["sensor1Alan"],
+			trainDatas[z]["sensor2Alan"],
+			trainDatas[z]["sensor3Alan"],
+			trainDatas[z]["sensor4Alan"],
+			trainDatas[z]["sensor5Alan"],
+			trainDatas[z]["sensor6Alan"],
+			trainDatas[z]["sensor7Alan"]];
+			json["output"] = trainDatas[z]["koklamaSinifi"];
+			trainingSet.push(json);
+		}
+		console.log("trainingSet", JSON.stringify(trainingSet));
+		//0.03 40000 0.000005, 100
+		var trainingOptions = {
+		  rate: req.body.ogrenmeOrani, 
+		  iterations: req.body.epochSayisi,
+		  error: req.body.hataOrani,
+		  log: 100
+		}
+
+		trainer.train(trainingSet, trainingOptions);
+
+		var output2 = myNet.activate([0,0,0,0,0,0,0])
+		console.log("Test Sonucu => ", output2);
+
+		var output3 = myNet.activate([100000,100000,100000,100000,100000,100000,100000])
+		console.log("Test Sonucu => ", output3);
+
+		/*var learningRate = .0003;
 		for (var i = 0; i < 20000; i++)
 		{
 			for (var j = 0; j < trainDatas.length; j++) {
@@ -102,7 +135,7 @@ app.post('/src/ogren', function(req, res){
 		}
 		//test
 		var output2 = myNetwork.activate([0,0,0,0,0,0,0]);
-		console.log("Test Sonucu => ", output2);
+		console.log("Test Sonucu => ", output2);*/
 
 		res.send("Success");
 	});
