@@ -244,8 +244,10 @@ body {
                 {{koklama}}
             </a>
          </li>
-         <!--{{koklamaListesi.toString()}}-->
          <br>
+         <div ng-repeat="(key, val) in turler">
+              <input type="radio" ng-click="koklamalariGetir(val.id)" ng-model="$parent.secilenKoklamaTuru" name="secilenKoklamaTuru" id="{{val.id}}" value="{{val.id}}" required />{{val.name}}
+         </div>
          <br>
          Koklama İsmi:
          <input type="text" placeholder="Örn. Zeytinyagi1" class="form-control" name="koklamaIsmi" ng-model="koklamaIsmi">
@@ -343,6 +345,17 @@ body {
       $scope.yeniSinifSayisi = 2;
       $scope.yeniSinifIsimleri = "A,B";
       $scope.yeniProjeIsmi = "";
+      $scope.secilenKoklamaTuru = {};
+      $scope.turler = [{
+        'name': 'Eğitim Verisi',
+        'id': 'egitim'
+      }, {
+        'name': 'Test Verisi',
+        'id': 'test'
+      }, {
+        'name': 'Yeni Veri',
+        'id': 'yeni'
+      } ];
       $scope.yeniProjeOlustur = function() {
         var data = {'projeAdi': $scope.yeniProjeIsmi, 'yeniSinifIsimleri': $scope.yeniSinifIsimleri};
         $http.post("yeniProjeOlustur", data).then(function (response) {
@@ -356,7 +369,7 @@ body {
       }
       $scope.koklamaChartiGoster = function(koklama){
         var sensor1 = [],sensor2 = [],sensor3 = [],sensor4 = [],sensor5 = [],sensor6 = [],sensor7 = [],tarih = [];
-        var data = {'proje':$scope.secilenProje, 'koklama': koklama};
+        var data = {'proje':$scope.secilenProje, 'koklama': koklama, 'tur':$scope.secilenKoklamaTuru};
         $scope.secilenKoklama = koklama;
         $http.post("koklamaChartiGoster", data).then(function (response) {
               console.log("Success Chart List ");
@@ -395,7 +408,8 @@ body {
       }
       $scope.projeSec = function(proje){
         $scope.secilenProje = proje;
-        $scope.koklamalariGetir();
+        if ($scope.secilenKoklamaTuru)
+          $scope.koklamalariGetir($scope.secilenKoklamaTuru);
       }
       $scope.projeleriGetir = function(){
         $http.get("projeleriGetir").then(function (response) {
@@ -410,8 +424,8 @@ body {
               console.log("Error ", error);
           });
       }
-      $scope.koklamalariGetir = function(){
-        var proje = {'proje':$scope.secilenProje};
+      $scope.koklamalariGetir = function(tur){
+        var proje = {'proje':$scope.secilenProje, 'tur': tur};
         $scope.koklamaListesi = [];
           $http.post("koklamalariGetir", proje).then(function (response) {
               console.log("Success List ");
@@ -425,7 +439,7 @@ body {
           });
         };
       $scope.koklamayaBasla = function(){
-        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'proje': $scope.secilenProje, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi, 'koklamaSinifi': $scope.koklamaSinifi};
+        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'proje': $scope.secilenProje, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi, 'koklamaSinifi': $scope.koklamaSinifi, 'secilenKoklamaTuru': $scope.secilenKoklamaTuru};
 
         console.log("formData", formData);
         if($scope.koklamaIsmi && ($scope.koklamaDakikasi || $scope.koklamaSaati)){
@@ -434,7 +448,8 @@ body {
           .then(function (response) {
             console.log('Data posted successfully', response);
             $scope.koklamaBittiMi = 2;
-            $scope.koklamalariGetir();
+            if ($scope.secilenKoklamaTuru)
+              $scope.koklamalariGetir($scope.secilenKoklamaTuru);
           }).catch(function (error) {
             console.log("Error ", error);
           });
