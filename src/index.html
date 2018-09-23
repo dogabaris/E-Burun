@@ -177,6 +177,10 @@ body {
         <div class="modal-body">
           Proje Adı:
           <input type="text" placeholder="Örn. Zeytin Yağı Projesi" class="form-control" name="yeniProjeIsmi" ng-model="yeniProjeIsmi">
+          Sınıf Sayısı:
+          <input type="number" placeholder="Örn. 2" class="form-control" name="yeniSinifSayisi" ng-model="yeniSinifSayisi" step="1" min="2">
+          Sınıf İsmi:
+          <input type="text" placeholder="Örn. A,B,C" class="form-control" name="yeniSinifIsimleri" ng-model="yeniSinifIsimleri">
         </div>
 
         <!-- Modal footer -->
@@ -236,9 +240,9 @@ body {
          <br>
          Proje Koklamaları: 
          <li ng-repeat="koklama in koklamaListesi">
-                      <a ng-click="koklamaChartiGoster(koklama)" href="javascript:;">
-                          {{koklama}}
-                      </a>
+            <a ng-click="koklamaChartiGoster(koklama)" href="javascript:;">
+                {{koklama}}
+            </a>
          </li>
          <!--{{koklamaListesi.toString()}}-->
          <br>
@@ -336,9 +340,11 @@ body {
       $scope.gizliKatmanHucreSayisi = 8;
       $scope.hataOrani = 0.000005;
       $scope.epochSayisi = 40000;
+      $scope.yeniSinifSayisi = 2;
+      $scope.yeniSinifIsimleri = "A,B";
       $scope.yeniProjeIsmi = "";
       $scope.yeniProjeOlustur = function() {
-        var data = {'projeAdi': $scope.yeniProjeIsmi};
+        var data = {'projeAdi': $scope.yeniProjeIsmi, 'yeniSinifIsimleri': $scope.yeniSinifIsimleri};
         $http.post("yeniProjeOlustur", data).then(function (response) {
           if (response.data=="Başarılı") {
             $scope.projeListesi = [];

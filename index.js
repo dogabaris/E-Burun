@@ -41,9 +41,35 @@ app.post('/src/koklamalariGetir', function(req,res){
     if (err) {
         return console.log('Koklamalar Getirilemedi: ' + err);
     }
-    res.send(files);
+    var targetFiles = files.filter(function(file) {
+	    return path.extname(file).toLowerCase() === '.json';
+	});
+    res.send(targetFiles);
 	});
 });
+
+function calculatePerformance(network, dataSet){
+	console.log("CALCULATE PERFORMANCE ------------");
+	var testOptions = {
+		log: 100,
+		cost: Trainer.cost.BINARY
+	}
+	var trainer = new Trainer(network);
+	trainer.test(dataSet, testOptions);
+	console.log("CALCULATE PERFORMANCE ------------");
+}
+
+function getOutputArray(sinifListesi, koklamaSinifi) {
+	var arr = new Array(sinifListesi.length);
+	for (var i = 0; i < arr.length; i++) {
+		if(sinifListesi[i] == koklamaSinifi){ 
+			arr[i] = 1;
+		}
+		else
+			arr[i] = 0;
+	}
+	return arr;
+}
 
 app.post('/src/ogren', function(req, res){
 	var trainDatas = [];
@@ -52,14 +78,20 @@ app.post('/src/ogren', function(req, res){
 	function readFiles(dirname, onFileContent, onError) {
 	  fs.readdir(dirname, function(err, filenames) {
 	    if (err) { onError(err); return;}
+	    var targetFiles = filenames.filter(function(file) {
+		    return path.extname(file).toLowerCase() === '.json';
+		});
+		console.log("targetFiles", targetFiles);
 
-	    filenames.forEach(function(filename) {
-	      fs.readFile(dirname + filename, 'utf-8', function(err, content) {
-	        if (err) { onError(err); return;}
+		if(targetFiles.length==0) res.send("Eğitilecek koklama bulunamadı");
 
-	        var parsedContent = JSON.parse(content);
-	        onFileContent(filename, parsedContent[parsedContent.length-1], filenames.length);
-	      });
+	    targetFiles.forEach(function(filename) {
+			fs.readFile(dirname + filename, 'utf-8', function(err, content) {
+		        if (err) { onError(err); return;}
+
+		        var parsedContent = JSON.parse(content);
+		        onFileContent(filename, parsedContent[parsedContent.length-1], targetFiles.length);
+	        });
 	    });
 	  });
 	}
@@ -75,78 +107,98 @@ app.post('/src/ogren', function(req, res){
 	}).then(function(jsonTrainDatas) {
 		trainDatas = jsonTrainDatas;
 		//console.log("data ", trainDatas);
+		var cfgJson;
 
-		//var inputLayer = new Layer(7);
-		//var hiddenLayer = new Layer(8);//Gizli katman hücre sayısı
-		//var outputLayer = new Layer(1);
+		fs.readFile(dirname + "ProjeSinifConfig.cfg", function (err, cfgData) {
+	    	cfgJson = JSON.parse(cfgData);
+	    	modelEgit();
+	    });
+		
+		function modelEgit() {
+		    var myNet = new Architect.Perceptron(7, req.body.gizliKatmanHucreSayisi, cfgJson["sinifSayisi"]);
+			var trainer = new Trainer(myNet);
 
-		//inputLayer.project(hiddenLayer);
-		//hiddenLayer.project(outputLayer);
+			console.log("cfgJson siniflar", cfgJson["siniflar"]);
+			console.log("koklamaSinifi", trainDatas[1]["koklamaSinifi"]);
+			console.log("getOutputArray ", getOutputArray(cfgJson["siniflar"], trainDatas[1]["koklamaSinifi"]));
 
-		//var myNetwork = new Network({
-		//	input: inputLayer,
-		//	hidden: [hiddenLayer],
-		//	output: outputLayer
-		//});
-
-		var myNet = new Architect.Perceptron(7, req.body.gizliKatmanHucreSayisi, 1);
-		var trainer = new Trainer(myNet);
-
-		var trainingSet = [];
-		for (var z = 0; z < trainDatas.length; z++) {
-			var json = {};
-			json["input"] = [trainDatas[z]["sensor1Alan"],
-			trainDatas[z]["sensor2Alan"],
-			trainDatas[z]["sensor3Alan"],
-			trainDatas[z]["sensor4Alan"],
-			trainDatas[z]["sensor5Alan"],
-			trainDatas[z]["sensor6Alan"],
-			trainDatas[z]["sensor7Alan"]];
-			json["output"] = trainDatas[z]["koklamaSinifi"];
-			trainingSet.push(json);
-		}
-		console.log("trainingSet", JSON.stringify(trainingSet));
-		//0.03 40000 0.000005, 100
-		var trainingOptions = {
-		  rate: req.body.ogrenmeOrani, 
-		  iterations: req.body.epochSayisi,
-		  error: req.body.hataOrani,
-		  log: 100
-		}
-
-		trainer.train(trainingSet, trainingOptions);
-
-		var output2 = myNet.activate([0,0,0,0,0,0,0])
-		console.log("Test Sonucu => ", output2);
-
-		var output3 = myNet.activate([100000,100000,100000,100000,100000,100000,100000])
-		console.log("Test Sonucu => ", output3);
-
-		/*var learningRate = .0003;
-		for (var i = 0; i < 20000; i++)
-		{
-			for (var j = 0; j < trainDatas.length; j++) {
-				var output = myNetwork.activate([trainDatas[j]["sensor1Alan"],trainDatas[j]["sensor2Alan"]
-				,trainDatas[j]["sensor3Alan"],trainDatas[j]["sensor4Alan"],trainDatas[j]["sensor5Alan"],trainDatas[j]["sensor6Alan"]
-				,trainDatas[j]["sensor7Alan"]]);
-				myNetwork.propagate(learningRate, trainDatas[j]["koklamaSinifi"]);
-				console.log(i + " Train ", output);
+			var trainingSet = [];
+			for (var z = 0; z < trainDatas.length; z++) {
+				var json = {};
+				json["input"] = [trainDatas[z]["sensor1Alan"],
+				trainDatas[z]["sensor2Alan"],
+				trainDatas[z]["sensor3Alan"],
+				trainDatas[z]["sensor4Alan"],
+				trainDatas[z]["sensor5Alan"],
+				trainDatas[z]["sensor6Alan"],
+				trainDatas[z]["sensor7Alan"]];
+				json["output"] = getOutputArray(cfgJson["siniflar"], trainDatas[z]["koklamaSinifi"]);
+				trainingSet.push(json);
 			}
-		}
-		//test
-		var output2 = myNetwork.activate([0,0,0,0,0,0,0]);
-		console.log("Test Sonucu => ", output2);*/
+			console.log("trainingSet", JSON.stringify(trainingSet));
+			//0.03 40000 0.000005, 100
+			var trainingOptions = {
+			  rate: req.body.ogrenmeOrani,
+			  iterations: req.body.epochSayisi,
+			  error: req.body.hataOrani,
+			  log: 100
+			}
 
-		res.send("Success");
+			trainer.train(trainingSet, trainingOptions);
+
+			var output2 = myNet.activate([0,0,0,0,0,0,0])
+			console.log("Test Sonucu2 => ", output2);
+
+			var output3 = myNet.activate([8382445.5,77544214.5,25673840.5,5555374,13139094,14735382,14298.335999999994])
+			console.log("Test Sonucu3 => ", output3);
+
+			var output4 = myNet.activate([999,999,999,999,999,999,999])
+			console.log("Test Sonucu4 => ", output4);
+
+			//calculatePerformance(myNet, trainingSet);
+
+			res.send("Success");
+		};
+
+			//calculatePerformance(myNet, trainingSet);
+
+			/*var storedModel = myNet.toJSON();
+			var modelName = "Model" + Date.now();
+			var modelDirName = dirname + modelName;
+			var saveModelDirname = path.dirname(modelDirName);
+			if (fs.existsSync(saveModelDirname)) {
+			  return true;
+			}
+			ensureDirectoryExistence(saveModelDirname);
+			fs.mkdirSync(saveModelDirname);
+
+			fs.writeFile(modelDirName, storedModel, (err) => {
+			    if (err) throw err;
+
+			    console.log("The file was succesfully saved!");
+			    res.send("Success");
+		    });*/
 	});
 });
 app.post('/src/yeniProjeOlustur', function(req, res){
 	//console.log('body:', JSON.stringify(req.body));
 	//console.log('path', applicationDir + "\\src\\projeler\\" + req.body.projeAdi);
+	var siniflar = req.body.yeniSinifIsimleri.split(',');
+	console.log("siniflar ", siniflar);
+
 	var dir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi;
+	var projeSinifConfig = {};
+	projeSinifConfig["siniflar"] = siniflar;
+	projeSinifConfig["sinifSayisi"] = siniflar.length;
+
 	if (!fs.existsSync(dir)){
 	    fs.mkdirSync(dir);
-	    res.send("Başarılı");
+	    fs.writeFile(dir + "\\ProjeSinifConfig.cfg", JSON.stringify(projeSinifConfig), (err) => {
+			    if (err) throw err;
+
+			    console.log("The file was succesfully saved!");
+        });
+        res.send("Başarılı");
 	}
 	res.send("Proje bulunmaktadır.");
 });
