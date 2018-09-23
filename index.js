@@ -2,6 +2,7 @@ const express = require('express')
 var bodyParser = require("body-parser");
 var serialport = require('serialport');
 var createInterface = require('readline').createInterface;
+const util = require('util');
 var synaptic = require('synaptic');
 var options = {
 	baudRate: 9600,
@@ -17,7 +18,7 @@ app.use('/src', express.static('src'))
 app.use('/node_modules', express.static('node_modules'))
 app.use('/bower_components', express.static('bower_components'))
 
-const { Layer, Network } = require('synaptic');
+const { Layer, Network, Architect, Trainer } = require('synaptic');
 const { lstatSync, readdirSync } = require('fs')
 const { join } = require('path')
 
@@ -38,46 +39,77 @@ app.post('/src/koklamalariGetir', function(req,res){
 
 	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\", function (err, files) {
     if (err) {
-        return console.log('Unable to scan directory: ' + err);
+        return console.log('Koklamalar Getirilemedi: ' + err);
     }
-    var data;
     res.send(files);
 	});
 });
 
 app.post('/src/ogren', function(req, res){
-	var inputLayer = new Layer(7);
-	var hiddenLayer = new Layer(3);
-	var outputLayer = new Layer(1);
+	var trainDatas = [];
+	
+	var dirname = applicationDir + "\\src\\projeler\\" + req.body.projeIsmi + "\\";
+	function readFiles(dirname, onFileContent, onError) {
+	  fs.readdir(dirname, function(err, filenames) {
+	    if (err) { onError(err); return;}
 
-	inputLayer.project(hiddenLayer);
-	hiddenLayer.project(outputLayer);
-	var myNetwork = new Network({
-	 input: inputLayer,
-	 hidden: [hiddenLayer],
-	 output: outputLayer
-	});
+	    filenames.forEach(function(filename) {
+	      fs.readFile(dirname + filename, 'utf-8', function(err, content) {
+	        if (err) { onError(err); return;}
 
-	// train the network - learn XOR
-	var learningRate = .3;
-	for (var i = 0; i < 20000; i++) {
-	  // 0,0 => 0
-	  myNetwork.activate([0,0]);
-	  myNetwork.propagate(learningRate, [0]);
-	  // 0,1 => 1
-	  myNetwork.activate([0,1]);
-	  myNetwork.propagate(learningRate, [1]);
-	  // 1,0 => 1
-	  myNetwork.activate([1,0]);
-	  myNetwork.propagate(learningRate, [1]);
-	  // 1,1 => 0
-	  myNetwork.activate([1,1]);
-	  myNetwork.propagate(learningRate, [0]);
+	        var parsedContent = JSON.parse(content);
+	        onFileContent(filename, parsedContent[parsedContent.length-1], filenames.length);
+	      });
+	    });
+	  });
 	}
+	new Promise(function(resolve, reject) {
+		var data = [];
+		readFiles(dirname, function(filename, content, fileCount) {
+			data.push(content);
+			if(fileCount==data.length)
+				resolve(data);
+		}, function(err) {
+		  throw err;
+		});
+	}).then(function(jsonTrainDatas) {
+		trainDatas = jsonTrainDatas;
+		console.log("data ", trainDatas);
+
+		var inputLayer = new Layer(7);
+		var hiddenLayer = new Layer(8);//Gizli katman hücre sayısı
+		var outputLayer = new Layer(1);
+
+		inputLayer.project(hiddenLayer);
+		hiddenLayer.project(outputLayer);
+
+		var myNetwork = new Network({
+			input: inputLayer,
+			hidden: [hiddenLayer],
+			output: outputLayer
+		});
+
+		var learningRate = .0003;
+		for (var i = 0; i < 20000; i++)
+		{
+			for (var j = 0; j < trainDatas.length; j++) {
+				var output = myNetwork.activate([trainDatas[j]["sensor1Alan"],trainDatas[j]["sensor2Alan"]
+				,trainDatas[j]["sensor3Alan"],trainDatas[j]["sensor4Alan"],trainDatas[j]["sensor5Alan"],trainDatas[j]["sensor6Alan"]
+				,trainDatas[j]["sensor7Alan"]]);
+				myNetwork.propagate(learningRate, trainDatas[j]["koklamaSinifi"]);
+				console.log(i + " Train ", output);
+			}
+		}
+		//test
+		var output2 = myNetwork.activate([0,0,0,0,0,0,0]);
+		console.log("Test Sonucu => ", output2);
+
+		res.send("Success");
+	});
 });
 app.post('/src/yeniProjeOlustur', function(req, res){
-	console.log('body:', JSON.stringify(req.body));
-	console.log('path', applicationDir + "\\src\\projeler\\" + req.body.projeAdi);
+	//console.log('body:', JSON.stringify(req.body));
+	//console.log('path', applicationDir + "\\src\\projeler\\" + req.body.projeAdi);
 	var dir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi;
 	if (!fs.existsSync(dir)){
 	    fs.mkdirSync(dir);
@@ -86,7 +118,7 @@ app.post('/src/yeniProjeOlustur', function(req, res){
 	res.send("Proje bulunmaktadır.");
 });
 app.post('/src/koklamaChartiGoster', function(req, res){
-	console.log('body:', JSON.stringify(req.body));
+	//console.log('body:', JSON.stringify(req.body));
 
 	fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklama + '.json', function (err, data) {
 	    var json = JSON.parse(data);
@@ -95,7 +127,7 @@ app.post('/src/koklamaChartiGoster', function(req, res){
 });
 
 app.post('/src/kokla', function(req, res){
-	console.log('body:', JSON.stringify(req.body));
+	//console.log('body:', JSON.stringify(req.body));
 	var sure = 0;
 	if (req.body.koklamaSaati)
 		sure += req.body.koklamaSaati*3600;
@@ -208,6 +240,7 @@ app.post('/src/kokla', function(req, res){
 					    alanJson['sensor5Alan'] = sensor5Alan;
 					    alanJson['sensor6Alan'] = sensor6Alan;
 					    alanJson['sensor7Alan'] = sensor7Alan;
+					    alanJson['koklamaSinifi'] = req.body.koklamaSinifi;
 					    json.push(alanJson);
 					    fs.writeFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + req.body.koklamaIsmi + '.json', JSON.stringify(json), function(err){
 					      if (err) throw err;

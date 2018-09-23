@@ -189,73 +189,83 @@ body {
     </div>
   </div>
   <div class="row">
-  <div class="col-lg-3 col-md-3">
-  <div class="nav-side-menu" style="left: 0px;">
-    <div class="brand">Menü</div>
-    <i class="fa fa-bars fa-2x toggle-btn"  data-toggle="collapse" data-target="#menu-content"></i>
-        <div class="menu-list">
-            <ul id="menu-content" class="menu-content collapse out">
-                <li data-toggle="modal" data-target="#yeniProjeModal">
-                  <a href="#">
-                  <i class="fa fa-plus fa-lg"></i> Yeni Proje Oluştur
-                  </a>
-                </li>
+    <div class="col-lg-3 col-md-3">
+    <div class="nav-side-menu" style="left: 0px;">
+      <div class="brand">Menü</div>
+      <i class="fa fa-bars fa-2x toggle-btn"  data-toggle="collapse" data-target="#menu-content"></i>
+          <div class="menu-list">
+              <ul id="menu-content" class="menu-content collapse out">
+                  <li data-toggle="modal" data-target="#yeniProjeModal">
+                    <a href="#">
+                    <i class="fa fa-plus fa-lg"></i> Yeni Proje Oluştur
+                    </a>
+                  </li>
 
-                <li  data-toggle="collapse" data-target="#projeler" class="active">
-                  <a href="#"><i class="fa fa-file fa-lg"></i> Projeler <span class="arrow"></span></a>
-                </li>
-                <ul class="sub-menu collapse in" id="projeler">
-                    <li ng-click="projeSec(proje)" ng-repeat="proje in projeListesi">
-                      <a href="javascript:;">
-                          {{proje}}
+                  <li  data-toggle="collapse" data-target="#projeler" class="active">
+                    <a href="#"><i class="fa fa-file fa-lg"></i> Projeler <span class="arrow"></span></a>
+                  </li>
+                  <ul class="sub-menu collapse in" id="projeler">
+                      <li ng-click="projeSec(proje)" ng-repeat="proje in projeListesi">
+                        <a href="javascript:;">
+                            {{proje}}
+                        </a>
+                      </li>
+                  </ul>
+                  <!--<li  data-toggle="collapse" data-target="#koklamalar" class="collapsed active">
+                    <a href="#"><i class="fa fa-cogs"></i> Koklamalar <span class="arrow"></span></a>
+                  </li>
+                  <ul class="sub-menu collapse" id="koklamalar">
+                  <li ng-repeat="koklama in koklamaListesi">
+                      <a ng-click="selectTest(koklama)" href="javascript:;">
+                          {{koklama}}
                       </a>
-                    </li>
-                </ul>
-                <!--<li  data-toggle="collapse" data-target="#koklamalar" class="collapsed active">
-                  <a href="#"><i class="fa fa-cogs"></i> Koklamalar <span class="arrow"></span></a>
-                </li>
-                <ul class="sub-menu collapse" id="koklamalar">
-                <li ng-repeat="koklama in koklamaListesi">
-                    <a ng-click="selectTest(koklama)" href="javascript:;">
-                        {{koklama}}
-                    </a>
-                </li>
-                </ul>-->
+                  </li>
+                  </ul>-->
 
-            </ul>
-     </div>
-  </div>
-  </div>
-  <div style="padding-top: 25px;" class="col-lg-4 col-md-4">
-       Seçilen Proje: {{secilenProje}}
-       <br>
-       <br>
-       Proje Koklamaları: 
-       <li ng-repeat="koklama in koklamaListesi">
-                    <a ng-click="koklamaChartiGoster(koklama)" href="javascript:;">
-                        {{koklama}}
-                    </a>
-       </li>
-       <!--{{koklamaListesi.toString()}}-->
-       <br>
-       <br>
-       Koklama İsmi:
-       <input type="text" placeholder="Örn. Zeytinyagi1" class="form-control" name="koklamaIsmi" ng-model="koklamaIsmi">
-       Saat/Dakika:
-       <div class="input-group">
-       <input type="number" placeholder="Örn. 1" class="form-control" name="koklamaSaati" style="width: 80px;" ng-model="koklamaSaati" min="1">
-       <input type="number" placeholder="Örn. 1" class="form-control" name="koklamaDakikasi" style="width: 80px;" ng-model="koklamaDakikasi" min="1">
+              </ul>
        </div>
-      <button ng-if="koklamaBittiMi==0 || koklamaBittiMi==2" class="btn btn-info navbar-btn" ng-click="koklamayaBasla()">Koklamaya Başla</button>
-      <img ng-if="koklamaBittiMi==1" src="/src/assets/loading.gif" width="120px">
-      <br>
-      <br>
-      {{secilenKoklama}} Koklama Verileri:
-      <br>
-      <c3chart bindto-id="chart">
-      </c3chart>
+    </div>
+    </div>
+  <div class="container col-md-offset-3">
+  <div class="row">
+
+    <div class="col-lg-8 col-md-8" style="padding-top: 25px;">
+    <h4>1- Koklama Verisi Ekle</h4>
+         Seçilen Proje: {{secilenProje}}
+         <br>
+         <br>
+         Proje Koklamaları: 
+         <li ng-repeat="koklama in koklamaListesi">
+                      <a ng-click="koklamaChartiGoster(koklama)" href="javascript:;">
+                          {{koklama}}
+                      </a>
+         </li>
+         <!--{{koklamaListesi.toString()}}-->
+         <br>
+         <br>
+         Koklama İsmi:
+         <input type="text" placeholder="Örn. Zeytinyagi1" class="form-control" name="koklamaIsmi" ng-model="koklamaIsmi">
+         Saat/Dakika:
+         <div class="input-group">
+           <input type="number" placeholder="Örn. 1" class="form-control" name="koklamaSaati" style="width: 80px;" ng-model="koklamaSaati" min="1">
+           <input type="number" placeholder="Örn. 1" class="form-control" name="koklamaDakikasi" style="width: 80px;" ng-model="koklamaDakikasi" min="1">
+         </div>
+         Hangi Sınıfa Ait:
+         <input type="text" placeholder="Örn. 1" class="form-control" name="koklamaSinifi" ng-model="koklamaSinifi">
+        <button ng-if="koklamaBittiMi==0 || koklamaBittiMi==2" class="btn btn-info navbar-btn" ng-click="koklamayaBasla()">Koklamaya Başla</button>
+        <img ng-if="koklamaBittiMi==1" src="/src/assets/loading.gif" width="120px">
+        <br>
+        <br>
+        {{secilenKoklama}} Koklama Verileri:
+        <br>
+        <c3chart bindto-id="chart">
+        </c3chart>
+        <hr noshade>
+    </div>
   </div>
-  <div style="padding-top: 25px;" class="col-lg-3 col-md-3">
+ <div class="row">
+    <div class="col-lg-8 col-md-8" style="padding-top: 25px;">
+    <h4>2- YSA Eğitimi</h4>
     <div class="dropdown">
       <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
         Eğitim Koklamaları
@@ -289,9 +299,13 @@ body {
     <div>
       <button class="btn btn-info navbar-btn" ng-click="ogren()">Öğren</button>
     </div>
-
   </div>
-</div>
+  </div>
+  <div class="row">
+  <h4>3- YSA ile Tahminleme veya Sınıflandırma</h4>
+  </div>
+  </div>
+  </div>
 <link href="/bower_components/c3/c3.min.css" rel="stylesheet" type="text/css" />
 
 <script src="/bower_components/d3/d3.min.js" charset="utf-8"></script>
@@ -305,6 +319,7 @@ body {
       $scope.fileName = "/static/logs/infolog.json";
       $scope.koklamaSaati = null;
       $scope.koklamaDakikasi = null;
+      $scope.koklamaSinifi = null;
       $scope.koklamaBittiMi = 0;
       $scope.projeListesi = [];
       $scope.koklamaListesi = [];
@@ -359,20 +374,6 @@ body {
                     }
                   }
               });
-              /*
-              data: {
-                    x: 'tarih',
-                    columns: [
-                      ['tarih', tarih],
-                      ['sensor1',sensor1],
-                      ['sensor2',sensor2],
-                      ['sensor3',sensor3],
-                      ['sensor4',sensor4],
-                      ['sensor5',sensor5],
-                      ['sensor6',sensor6],
-                      ['sensor7',sensor7]
-                    ]
-                  }*/
           }).catch(function (error) {
               console.log("Error ", error);
           });
@@ -409,7 +410,7 @@ body {
           });
         };
       $scope.koklamayaBasla = function(){
-        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'proje': $scope.secilenProje, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi};
+        var formData = {'koklamaIsmi': $scope.koklamaIsmi, 'proje': $scope.secilenProje, 'koklamaSaati': $scope.koklamaSaati, 'koklamaDakikasi': $scope.koklamaDakikasi, 'koklamaSinifi': $scope.koklamaSinifi};
 
         console.log("formData", formData);
         if($scope.koklamaIsmi && ($scope.koklamaDakikasi || $scope.koklamaSaati)){
@@ -427,13 +428,16 @@ body {
       //$scope.koklamalariGetir();
       $scope.projeleriGetir();
       $scope.ogren = function(){
-
+        if($scope.secilenProje){
+        var formData = {'projeIsmi':$scope.secilenProje};
         $http.post("ogren", formData)
           .then(function (response) {
             console.log(response);
           }).catch(function (error) {
             console.log("Error ", error);
           });
+        }
+        
       };
       
     });
