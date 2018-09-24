@@ -266,39 +266,11 @@ body {
         <br>
         <c3chart bindto-id="chart">
         </c3chart>
-        <hr noshade>
     </div>
   </div>
  <div class="row">
     <div class="col-lg-8 col-md-8" style="padding-top: 25px;">
     <h4>2- YSA Eğitimi</h4>
-    <!--
-    <div class="dropdown">
-      <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-        Eğitim Koklamaları
-        <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-        <li ng-repeat="koklama in koklamaListesi">
-                    <a ng-click="selectTest(koklama)" href="javascript:;">
-                        {{koklama}}
-                    </a>
-        </li>
-      </ul>
-    </div>
-    <div class="dropdown">
-      <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-        Test Koklamaları
-        <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-        <li ng-repeat="koklama in koklamaListesi">
-                    <a ng-click="selectTest(koklama)" href="javascript:;">
-                        {{koklama}}
-                    </a>
-        </li>
-      </ul>
-    </div>-->
        Öğrenme Oranı:       
        <input type="number" placeholder="Örn. 0.03" class="form-control" name="ogrenmeOrani" style="width: 170px;" step="any" ng-model="ogrenmeOrani">
        Gizli Katman Hücre Sayısı:
@@ -309,6 +281,22 @@ body {
        <input type="number" placeholder="Örn. 40000" class="form-control" name="epochSayisi" style="width: 170px;" step="1" ng-model="epochSayisi" min="1">
     <div>
       <button class="btn btn-info navbar-btn" ng-click="ogren()">YSA Eğitimine Başla</button>
+    </div>
+    <div class="dropdown">
+      <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        Eğitilmiş YSA
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+        <li ng-repeat="secilenProjeModeli in secilenProjeModelleri">
+                    <a ng-click="modelSec(secilenProjeModeli)" href="javascript:;">
+                        {{secilenProjeModeli}}
+                    </a>
+        </li>
+      </ul>
+      Seçilen Model: {{secilenProjeModeli}}, 
+      Eğitim Verisi Başarısı: %{{secilenModelEgitimBasarisi}}, 
+      Test Verisi Başarısı: %{{secilenModelTestBasarisi}}
     </div>
   </div>
   </div>
@@ -345,6 +333,7 @@ body {
       $scope.yeniSinifSayisi = 2;
       $scope.yeniSinifIsimleri = "A,B";
       $scope.yeniProjeIsmi = "";
+      $scope.secilenProjeModelleri;
       $scope.secilenKoklamaTuru = {};
       $scope.turler = [{
         'name': 'Eğitim Verisi',
@@ -366,7 +355,15 @@ body {
         }).catch(function (error) {
               console.log("Error ", error);
         });
-      }
+      };
+      $scope.modelSec = function(secilenProjeModeli){
+        $scope.secilenProjeModeli = secilenProjeModeli;
+        var secilenProj = {'secilenProjeModeli': secilenProjeModeli, 'secilenProje': $scope.secilenProje};
+        $http.post("modelBasarimlariGetir", secilenProj).then(function (response) {
+          $scope.secilenModelEgitimBasarisi = response.data.trainBasarisi;
+          $scope.secilenModelTestBasarisi = response.data.testBasarisi;
+        });
+      };
       $scope.koklamaChartiGoster = function(koklama){
         var sensor1 = [],sensor2 = [],sensor3 = [],sensor4 = [],sensor5 = [],sensor6 = [],sensor7 = [],tarih = [];
         var data = {'proje':$scope.secilenProje, 'koklama': koklama, 'tur':$scope.secilenKoklamaTuru};
@@ -405,12 +402,13 @@ body {
           }).catch(function (error) {
               console.log("Error ", error);
           });
-      }
+      };
       $scope.projeSec = function(proje){
         $scope.secilenProje = proje;
-        if ($scope.secilenKoklamaTuru)
+        if (Object.keys($scope.secilenKoklamaTuru).length != 0)
           $scope.koklamalariGetir($scope.secilenKoklamaTuru);
-      }
+        $scope.ysaModelleriGetir();
+      };
       $scope.projeleriGetir = function(){
         $http.get("projeleriGetir").then(function (response) {
               console.log("Project List ");
@@ -423,7 +421,14 @@ body {
           }).catch(function (error) {
               console.log("Error ", error);
           });
-      }
+      };
+      $scope.ysaModelleriGetir = function(){
+        var secilenProje = {'secilenProje': $scope.secilenProje}
+        $http.post("ysaModelleriGetir", secilenProje).then(function (response) {
+            console.log("Modeller", response);
+            $scope.secilenProjeModelleri = response.data;
+        });
+      };
       $scope.koklamalariGetir = function(tur){
         var proje = {'proje':$scope.secilenProje, 'tur': tur};
         $scope.koklamaListesi = [];
@@ -448,14 +453,13 @@ body {
           .then(function (response) {
             console.log('Data posted successfully', response);
             $scope.koklamaBittiMi = 2;
-            if ($scope.secilenKoklamaTuru)
+            if (Object.keys($scope.secilenKoklamaTuru).length != 0)
               $scope.koklamalariGetir($scope.secilenKoklamaTuru);
           }).catch(function (error) {
             console.log("Error ", error);
           });
         }
       }
-      //$scope.koklamalariGetir();
       $scope.projeleriGetir();
       $scope.ogren = function(){
         if($scope.secilenProje){

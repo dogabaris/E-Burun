@@ -48,15 +48,28 @@ app.post('/src/koklamalariGetir', function(req,res){
 	});
 });
 
-function calculatePerformance(network, dataSet){
+function calculatePerformance(network, dataSet, sinifSayisi, sinifListesi){
 	console.log("CALCULATE PERFORMANCE ------------");
-	var testOptions = {
-		log: 100,
-		cost: Trainer.cost.BINARY
+	var dogru=0;
+	var yanlis=0;
+	for (var n = 0; n < dataSet.length; n++) {
+		var output = network.activate([dataSet[n]["sensor1Alan"], dataSet[n]["sensor2Alan"]
+			, dataSet[n]["sensor3Alan"], dataSet[n]["sensor4Alan"], dataSet[n]["sensor5Alan"]
+			, dataSet[n]["sensor6Alan"], dataSet[n]["sensor7Alan"]])
+		console.log("Test Sonucu => ", output);
+		for (var t = 0; t < sinifSayisi; t++) {
+				if (Math.abs(output[t] - getOutputArray(sinifListesi, dataSet[n]["koklamaSinifi"])[t]) <= 0.3){ //0.3 threshold
+					dogru++;
+				}
+				else if(t==sinifSayisi-1){
+					yanlis++;
+				}
+		}
 	}
-	var trainer = new Trainer(network);
-	trainer.test(dataSet, testOptions);
+	var yuzde = dogru/(dogru+yanlis) * 100;
+	console.log("dogru, yanlis => ", dogru, yanlis, yuzde);
 	console.log("CALCULATE PERFORMANCE ------------");
+	return yuzde;
 }
 
 function getOutputArray(sinifListesi, koklamaSinifi) {
@@ -70,7 +83,27 @@ function getOutputArray(sinifListesi, koklamaSinifi) {
 	}
 	return arr;
 }
+app.post('/src/ysaModelleriGetir', function(req, res){
+	
+	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\model", function (err, files) {
+    if (err) {
+        return console.log('Modeller Getirilemedi: ' + err);
+    }
+    var targetFiles = files.filter(function(file) {
+		    return path.extname(file).toLowerCase() === '';
+	});
+    res.send(targetFiles);
+	});
+});
+app.post('/src/modelBasarimlariGetir', function(req, res){
+	fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\" + "model" + "\\" + req.body.secilenProjeModeli + ".cfg", 'utf-8',
+	 function(err, content) {
+        if (err) return console.log('Model Başarımı Getirilemedi: ' + err);
 
+        var resp = JSON.parse(content);
+        res.send(resp);
+    });
+});
 app.post('/src/ogren', function(req, res){
 	var trainDatas = [];
 	
@@ -148,25 +181,47 @@ app.post('/src/ogren', function(req, res){
 			trainer.train(trainingSet, trainingOptions);
 
 			//EĞİTİM BAŞARIMI
-			var output2 = myNet.activate([0,0,0,0,0,0,0])
+			/*var output2 = myNet.activate([0,0,0,0,0,0,0])
 			console.log("Test Sonucu2 => ", output2);
 
 			var output3 = myNet.activate([8382445.5,77544214.5,25673840.5,5555374,13139094,14735382,14298.335999999994])
 			console.log("Test Sonucu3 => ", output3);
 
 			var output4 = myNet.activate([999,999,999,999,999,999,999])
-			console.log("Test Sonucu4 => ", output4);
+			console.log("Test Sonucu4 => ", output4);*/
+
+			var trainBasari = calculatePerformance(myNet, trainDatas, cfgJson["sinifSayisi"], cfgJson["siniflar"]);
 
 			//TEST BAŞARIMI
 
+			var storedModel = myNet.toJSON();
+			var modelName = "Model" + Date.now();
+			var modelDirName = dirname + modelName;
+			if (!fs.existsSync(projectDir + "\\" + "model")){
+			    fs.mkdirSync(projectDir + "\\" + "model");
+			    fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName, JSON.stringify(storedModel), (err) => {
+					    if (err) throw err;
 
-			//calculatePerformance(myNet, trainingSet);
+					    console.log("The file was succesfully saved!");
+		        });
+			}
+			else{
+				fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName, JSON.stringify(storedModel), (err) => {
+					    if (err) throw err;
+
+					    console.log("The file was succesfully saved!");
+		        });
+			}
+
+			var trainBasariJson = {'trainBasarisi': trainBasari};
+		        fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName + ".cfg", JSON.stringify(trainBasariJson), (err) => {
+					    if (err) throw err;
+
+					    console.log("The file was succesfully saved!");
+	        });
 
 			res.send("Success");
 		};
-
-			//calculatePerformance(myNet, trainingSet);
-
 			/*var storedModel = myNet.toJSON();
 			var modelName = "Model" + Date.now();
 			var modelDirName = dirname + modelName;
@@ -324,7 +379,7 @@ app.post('/src/kokla', function(req, res){
 					    	
 				    	}
 				    }
-				    console.log("sensor1 Nihai Alan", sensor1Alan);
+				    //console.log("sensor1 Nihai Alan", sensor1Alan);
 				    fs.readFile(folderDir + "\\" + req.body.koklamaIsmi + '.json', function (err, data) {
 					    var json = JSON.parse(data);
 					    var alanJson = {};
