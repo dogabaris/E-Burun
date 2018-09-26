@@ -12,7 +12,18 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
   <style type="text/css">
-    .nav-side-menu {
+  table, th , td  {
+  border: 1px solid grey;
+  border-collapse: collapse;
+  padding: 5px;
+  }
+  table tr:nth-child(odd) {
+    background-color: #f1f1f1;
+  }
+  table tr:nth-child(even) {
+    background-color: #ffffff;
+  }
+  .nav-side-menu {
   overflow: auto;
   font-family: verdana;
   font-size: 12px;
@@ -235,6 +246,7 @@ body {
 
     <div class="col-lg-8 col-md-8" style="padding-top: 25px;">
     <h4>1- Koklama Verisi Ekle</h4>
+    <hr style="border-top: 1px solid #000;">
          Seçilen Proje: {{secilenProje}}
          <br>
          <br>
@@ -269,8 +281,9 @@ body {
     </div>
   </div>
  <div class="row">
-    <div class="col-lg-8 col-md-8" style="padding-top: 25px;">
+    <div class="col-lg-8 col-md-8">
     <h4>2- YSA Eğitimi</h4>
+    <hr style="border-top: 1px solid #000;">
        Öğrenme Oranı:       
        <input type="number" placeholder="Örn. 0.03" class="form-control" name="ogrenmeOrani" style="width: 170px;" step="any" ng-model="ogrenmeOrani">
        Gizli Katman Hücre Sayısı:
@@ -301,8 +314,49 @@ body {
   </div>
   </div>
   <div class="row">
-  <h4>3- YSA ile Tahminleme veya Sınıflandırma</h4>
-  </div>
+    <div class="col-lg-8 col-md-8" style="padding-top: 25px;padding-bottom: 70px;">
+    <h4>3- YSA ile Tahminleme veya Sınıflandırma</h4>
+    <hr style="border-top: 1px solid #000;">
+      <div class="dropdown">
+        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          Kaydedilmiş Veriler
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+          <li ng-repeat="secilenKaydedilmisVeri in secilenKaydedilmisVeriler">
+                      <a ng-click="kaydedilmisVeriSec(secilenKaydedilmisVeri)" href="javascript:;">
+                          {{secilenKaydedilmisVeri}}
+                      </a>
+          </li>
+        </ul>
+        <button class="btn btn-info navbar-btn" ng-click="tahminlemeYap()">Sonuç Üret</button>
+      </div>
+      <table>
+        <tr>
+          <td>Sensor1</td>
+          <td>Sensor2</td>
+          <td>Sensor3</td>
+          <td>Sensor4</td>
+          <td>Sensor5</td>
+          <td>Sensor6</td>
+          <td>Sensor7</td>
+          <td>Beklenen</td>
+          <td>Sonuç</td>
+        </tr>
+        <tr>
+          <td>14566</td>
+          <td>298752</td>
+          <td>5204</td>
+          <td>170124</td>
+          <td>1020021</td>
+          <td>34012</td>
+          <td>8294</td>
+          <td>A</td>
+          <td>A</td>
+        </tr>
+      </table>
+      </div>
+    </div>
   </div>
   </div>
 <link href="/bower_components/c3/c3.min.css" rel="stylesheet" type="text/css" />

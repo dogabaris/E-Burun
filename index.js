@@ -104,6 +104,44 @@ app.post('/src/modelBasarimlariGetir', function(req, res){
         res.send(resp);
     });
 });
+
+function getTestDatas(projeIsmi){
+	var dirname = applicationDir + "\\src\\projeler\\" + projeIsmi + "\\test\\";
+	var projectDir = applicationDir + "\\src\\projeler\\" + projeIsmi + "\\";
+	function readFiles(dirname, onFileContent, onError) {
+	  fs.readdir(dirname, function(err, filenames) {
+	    if (err) { onError(err); return;}
+	    var targetFiles = filenames.filter(function(file) {
+		    return path.extname(file).toLowerCase() === '.json';
+		});
+		console.log("targetFiles", targetFiles);
+
+		if(targetFiles.length==0) res.send("Eğitilecek koklama bulunamadı");
+
+	    targetFiles.forEach(function(filename) {
+			fs.readFile(dirname + filename, 'utf-8', function(err, content) {
+		        if (err) { onError(err); return;}
+
+		        var parsedContent = JSON.parse(content);
+		        onFileContent(filename, parsedContent[parsedContent.length-1], targetFiles.length);
+	        });
+	    });
+	  });
+	}
+	new Promise(function(resolve, reject) {
+		var data = [];
+		readFiles(dirname, function(filename, content, fileCount) {
+			data.push(content);
+			if(fileCount==data.length)
+				resolve(data);
+		}, function(err) {
+		  throw err;
+		});
+	}).then(function(testDatas) {
+		return testDatas;
+	});
+}
+
 app.post('/src/ogren', function(req, res){
 	var trainDatas = [];
 	
@@ -193,51 +231,73 @@ app.post('/src/ogren', function(req, res){
 			var trainBasari = calculatePerformance(myNet, trainDatas, cfgJson["sinifSayisi"], cfgJson["siniflar"]);
 
 			//TEST BAŞARIMI
+			var testDirname = applicationDir + "\\src\\projeler\\" + req.body.projeIsmi + "\\test\\";
+			var projectTestDir = applicationDir + "\\src\\projeler\\" + req.body.projeIsmi + "\\";
+			function readTestFiles(testDirname, onFileContent, onError) {
+			  fs.readdir(testDirname, function(err, filenames) {
+			    if (err) { onError(err); return;}
+			    var targetFiles = filenames.filter(function(file) {
+				    return path.extname(file).toLowerCase() === '.json';
+				});
+				console.log("targetFiles", targetFiles);
 
-			var storedModel = myNet.toJSON();
-			var modelName = "Model" + Date.now();
-			var modelDirName = dirname + modelName;
-			if (!fs.existsSync(projectDir + "\\" + "model")){
-			    fs.mkdirSync(projectDir + "\\" + "model");
-			    fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName, JSON.stringify(storedModel), (err) => {
-					    if (err) throw err;
+				if(targetFiles.length==0) res.send("Eğitilecek koklama bulunamadı");
 
-					    console.log("The file was succesfully saved!");
-		        });
+			    targetFiles.forEach(function(filename) {
+					fs.readFile(testDirname + filename, 'utf-8', function(err, content) {
+				        if (err) { onError(err); return;}
+
+				        var parsedContent = JSON.parse(content);
+				        onFileContent(filename, parsedContent[parsedContent.length-1], targetFiles.length);
+			        });
+			    });
+			  });
 			}
-			else{
-				fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName, JSON.stringify(storedModel), (err) => {
-					    if (err) throw err;
+			new Promise(function(resolve, reject) {
+				var testDatas = [];
+				readTestFiles(testDirname, function(filename, content, fileCount) {
+					testDatas.push(content);
+					if(fileCount==testDatas.length)
+						resolve(testDatas);
+				}, function(err) {
+				  throw err;
+				});
+			}).then(function(testDatas) {
+				console.log("testDatas-----", testDatas);
+				var testBasari = calculatePerformance(myNet, testDatas, cfgJson["sinifSayisi"], cfgJson["siniflar"]);
+				console.log("testBasari", testBasari);
 
-					    console.log("The file was succesfully saved!");
+				var storedModel = myNet.toJSON();
+				var modelName = "Model" + Date.now();
+				var modelDirName = dirname + modelName;
+				if (!fs.existsSync(projectDir + "\\" + "model")){
+				    fs.mkdirSync(projectDir + "\\" + "model");
+				    fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName, JSON.stringify(storedModel), (err) => {
+						    if (err) throw err;
+
+						    console.log("The file was succesfully saved!");
+			        });
+				}
+				else{
+					fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName, JSON.stringify(storedModel), (err) => {
+						    if (err) throw err;
+
+						    console.log("The file was succesfully saved!");
+			        });
+				}
+
+				var basariJson = {'trainBasarisi': trainBasari,'testBasarisi': testBasari};
+		        fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName + ".cfg", JSON.stringify(basariJson), (err) => {
+						    if (err) throw err;
+						    console.log("The file was succesfully saved!");
+					        
+					res.send("Success");
 		        });
-			}
 
-			var trainBasariJson = {'trainBasarisi': trainBasari};
-		        fs.writeFile(projectDir + "\\" + "model" + "\\" + modelName + ".cfg", JSON.stringify(trainBasariJson), (err) => {
-					    if (err) throw err;
-
-					    console.log("The file was succesfully saved!");
-	        });
-
-			res.send("Success");
+			}).catch((error) => {
+			  console.log("Ogrenme Hatasi", error);
+			});
 		};
-			/*var storedModel = myNet.toJSON();
-			var modelName = "Model" + Date.now();
-			var modelDirName = dirname + modelName;
-			var saveModelDirname = path.dirname(modelDirName);
-			if (fs.existsSync(saveModelDirname)) {
-			  return true;
-			}
-			ensureDirectoryExistence(saveModelDirname);
-			fs.mkdirSync(saveModelDirname);
-
-			fs.writeFile(modelDirName, storedModel, (err) => {
-			    if (err) throw err;
-
-			    console.log("The file was succesfully saved!");
-			    res.send("Success");
-		    });*/
 	});
 });
 app.post('/src/yeniProjeOlustur', function(req, res){
