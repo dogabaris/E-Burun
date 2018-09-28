@@ -323,13 +323,14 @@ body {
           <span class="caret"></span>
         </button>
         <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-          <li ng-repeat="secilenKaydedilmisVeri in secilenKaydedilmisVeriler">
-                      <a ng-click="kaydedilmisVeriSec(secilenKaydedilmisVeri)" href="javascript:;">
-                          {{secilenKaydedilmisVeri}}
+          <li ng-repeat="deneyIsmi in secilenProjeDeneyIsimleri">
+                      <a ng-click="deneySec(deneyIsmi)" href="javascript:;">
+                          {{deneyIsmi}}
                       </a>
           </li>
         </ul>
-        <button class="btn btn-info navbar-btn" ng-click="tahminlemeYap()">Sonuç Üret</button>
+        Seçilen Deney: {{secilenDeney}}
+        <button class="btn btn-info navbar-btn" ng-click="deneySonucuUret()">Sonuç Üret</button>
       </div>
       <table>
         <tr>
@@ -376,6 +377,7 @@ body {
       $scope.koklamaBittiMi = 0;
       $scope.projeListesi = [];
       $scope.koklamaListesi = [];
+      $scope.secilenProjeDeneyIsimleri = [];
       $scope.secilenKoklama = "";
       $scope.koklamaIsmi = "";
       $scope.secilenProje = "";
@@ -388,6 +390,7 @@ body {
       $scope.yeniSinifIsimleri = "A,B";
       $scope.yeniProjeIsmi = "";
       $scope.secilenProjeModelleri;
+      $scope.secilenDeney;
       $scope.secilenKoklamaTuru = {};
       $scope.turler = [{
         'name': 'Eğitim Verisi',
@@ -399,6 +402,19 @@ body {
         'name': 'Yeni Veri',
         'id': 'yeni'
       } ];
+      $scope.deneySec = function(deneyIsmi){
+        $scope.secilenDeney = deneyIsmi;
+      };
+      $scope.deneySonucuUret = function(){
+        var data = {'proje': $scope.secilenProje, 'model': $scope.secilenProjeModeli , 'deney': $scope.secilenDeney};
+        $http.post("deneySonucuUret", data).then(function (response) {
+          if (response.data=="Başarılı") {
+
+          }
+        }).catch(function (error) {
+              console.log("Error ", error);
+        });
+      };
       $scope.yeniProjeOlustur = function() {
         var data = {'projeAdi': $scope.yeniProjeIsmi, 'yeniSinifIsimleri': $scope.yeniSinifIsimleri};
         $http.post("yeniProjeOlustur", data).then(function (response) {
@@ -462,6 +478,7 @@ body {
         if (Object.keys($scope.secilenKoklamaTuru).length != 0)
           $scope.koklamalariGetir($scope.secilenKoklamaTuru);
         $scope.ysaModelleriGetir();
+        $scope.deneyIsimleriniGetir();
       };
       $scope.projeleriGetir = function(){
         $http.get("projeleriGetir").then(function (response) {
@@ -483,6 +500,16 @@ body {
             $scope.secilenProjeModelleri = response.data;
         });
       };
+      $scope.deneyIsimleriniGetir = function(){
+        var secilenProje = {'secilenProje': $scope.secilenProje}
+        $http.post("deneyIsimleriniGetir", secilenProje).then(function (response) {
+            console.log("Modeller", response);
+            for (var i = 0; i < response.data.length; i++) {
+              var splittedKoklamalar= response.data[i].split(".json");
+              $scope.secilenProjeDeneyIsimleri.push(splittedKoklamalar[0]);
+            }
+        });
+      }
       $scope.koklamalariGetir = function(tur){
         var proje = {'proje':$scope.secilenProje, 'tur': tur};
         $scope.koklamaListesi = [];
@@ -522,6 +549,7 @@ body {
         $http.post("ogren", formData)
           .then(function (response) {
             console.log(response);
+            $scope.ysaModelleriGetir();
           }).catch(function (error) {
             console.log("Error ", error);
           });

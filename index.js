@@ -83,8 +83,50 @@ function getOutputArray(sinifListesi, koklamaSinifi) {
 	}
 	return arr;
 }
-app.post('/src/ysaModelleriGetir', function(req, res){
+app.post('/src/deneySonucuUret', function(req, res){
+	function readFiles(onFileContent, onError) {
+		fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + "model" + "\\" + req.body.model, 'utf-8',
+		 function(err, content) {
+	        if (err) return console.log('Model Başarımı Getirilemedi: ' + err);
+	        var jsonNetwork = JSON.parse(content);
+	        //var jsonNetwork = content;
+	        //console.log("jsonNetwork ", jsonNetwork);
+        	onFileContent(jsonNetwork, jsonNetwork.length);
+	    });
+	}
+	new Promise(function(resolve, reject) {
+		readFiles(function(jsonNetwork, fileCount) {
+			console.log("jsonNetwork", jsonNetwork);
+			resolve(jsonNetwork);
+		}, function(err) {
+		  throw err;
+		});
+	}).then(function (networkJson) {
+		fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + "yeni" + "\\" + req.body.deney + ".json", 'utf-8',
+			 function(err, yeniContent) {
+		 	if (err) return console.log('Seçilen Koklama Getirilemedi: ' + err);
+		 	var deneyAlanlari = JSON.parse(yeniContent);
+		 	var myNet = Network.fromJSON(networkJson);
+		 	var trainer = new Trainer(myNet);
+		 	//var standalone = myNet.standalone();
+		 	console.log("myNet ", myNet);
+		 	console.log("deneyAlanlari ", deneyAlanlari[deneyAlanlari.length-1]);
+		 	/*var output0 = standalone([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
+			, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
+			, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);*/
+		 	var output = myNet.activate([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
+			, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
+			, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);
+			
+		 	//console.log("output0 ", output0);
+		 	console.log("output ", output);
+
+ 		 	res.send(output);
+	 	});
+	});
 	
+});
+app.post('/src/ysaModelleriGetir', function(req, res){
 	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\model", function (err, files) {
     if (err) {
         return console.log('Modeller Getirilemedi: ' + err);
@@ -93,6 +135,17 @@ app.post('/src/ysaModelleriGetir', function(req, res){
 		    return path.extname(file).toLowerCase() === '';
 	});
     res.send(targetFiles);
+	});
+});
+app.post('/src/deneyIsimleriniGetir', function(req,res){
+	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\yeni", function (err, files) {
+	    if (err) {
+	        return console.log('Deney İsimleri Getirilemedi: ' + err);
+	    }
+	    var targetFiles = files.filter(function(file) {
+			    return path.extname(file).toLowerCase() === '.json';
+		});
+	    res.send(targetFiles);
 	});
 });
 app.post('/src/modelBasarimlariGetir', function(req, res){
@@ -104,43 +157,6 @@ app.post('/src/modelBasarimlariGetir', function(req, res){
         res.send(resp);
     });
 });
-
-function getTestDatas(projeIsmi){
-	var dirname = applicationDir + "\\src\\projeler\\" + projeIsmi + "\\test\\";
-	var projectDir = applicationDir + "\\src\\projeler\\" + projeIsmi + "\\";
-	function readFiles(dirname, onFileContent, onError) {
-	  fs.readdir(dirname, function(err, filenames) {
-	    if (err) { onError(err); return;}
-	    var targetFiles = filenames.filter(function(file) {
-		    return path.extname(file).toLowerCase() === '.json';
-		});
-		console.log("targetFiles", targetFiles);
-
-		if(targetFiles.length==0) res.send("Eğitilecek koklama bulunamadı");
-
-	    targetFiles.forEach(function(filename) {
-			fs.readFile(dirname + filename, 'utf-8', function(err, content) {
-		        if (err) { onError(err); return;}
-
-		        var parsedContent = JSON.parse(content);
-		        onFileContent(filename, parsedContent[parsedContent.length-1], targetFiles.length);
-	        });
-	    });
-	  });
-	}
-	new Promise(function(resolve, reject) {
-		var data = [];
-		readFiles(dirname, function(filename, content, fileCount) {
-			data.push(content);
-			if(fileCount==data.length)
-				resolve(data);
-		}, function(err) {
-		  throw err;
-		});
-	}).then(function(testDatas) {
-		return testDatas;
-	});
-}
 
 app.post('/src/ogren', function(req, res){
 	var trainDatas = [];
@@ -266,8 +282,10 @@ app.post('/src/ogren', function(req, res){
 				console.log("testDatas-----", testDatas);
 				var testBasari = calculatePerformance(myNet, testDatas, cfgJson["sinifSayisi"], cfgJson["siniflar"]);
 				console.log("testBasari", testBasari);
-
 				var storedModel = myNet.toJSON();
+				//var standalone = myNet.standalone();
+				//var storedModel = standalone.toString();
+				//console.log("standalone ", storedModel);
 				var modelName = "Model" + Date.now();
 				var modelDirName = dirname + modelName;
 				if (!fs.existsSync(projectDir + "\\" + "model")){
