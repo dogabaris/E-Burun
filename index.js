@@ -83,6 +83,23 @@ function getOutputArray(sinifListesi, koklamaSinifi) {
 	}
 	return arr;
 }
+function indexOfMax(arr) {
+    if (arr.length === 0) {
+        return -1;
+    }
+
+    var max = arr[0];
+    var maxIndex = 0;
+
+    for (var i = 1; i < arr.length; i++) {
+        if (arr[i] > max) {
+            maxIndex = i;
+            max = arr[i];
+        }
+    }
+
+    return maxIndex;
+}
 app.post('/src/deneySonucuUret', function(req, res){
 	function readFiles(onFileContent, onError) {
 		fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\" + "model" + "\\" + req.body.model, 'utf-8',
@@ -112,21 +129,41 @@ app.post('/src/deneySonucuUret', function(req, res){
 		 	console.log("myNet ", myNet);
 		 	console.log("deneyAlanlari ", deneyAlanlari[deneyAlanlari.length-1]);
 		 	console.log("sensor1Alan ", deneyAlanlari[deneyAlanlari.length-1]["sensor1Alan"]);
-		 	/*var output0 = standalone([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
-			, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
-			, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);*/
-			//var output2 = trainer.activate([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
-			//, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
-			//, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);
+
 		 	var output = myNet.activate([deneyAlanlari[deneyAlanlari.length-1]["sensor1Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor2Alan"]
 			, deneyAlanlari[deneyAlanlari.length-1]["sensor3Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor4Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor5Alan"]
 			, deneyAlanlari[deneyAlanlari.length-1]["sensor6Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor7Alan"]]);
 			
-		 	//console.log("output0 ", output0);
-		 	console.log("output ", output);
-		 	//console.log("output2 ", output2);
+			console.log("output ", output);
 
- 		 	res.send(output);
+			function readConfFiles(onFileContent, onError) {
+				fs.readFile(applicationDir + "\\src\\projeler\\" + req.body.proje + "\\ProjeSinifConfig.cfg", 'utf-8',
+				 function(err, content) {
+			        if (err) return console.log('Proje Sınıf Config Getirilemedi: ' + err);
+			        var sinifConfig = JSON.parse(content);
+			        //var jsonNetwork = content;
+			        //console.log("jsonNetwork ", jsonNetwork);
+		        	onFileContent(sinifConfig, sinifConfig.length);
+			    });
+			}
+			new Promise(function(resolve, reject) {
+				readConfFiles(function(sinifConfig, fileCount) {
+					//console.log("sinifConfig", sinifConfig);
+					resolve(sinifConfig);
+				}, function(err) {
+				  throw err;
+				});
+			}).then(function (sinifConfig) {
+				console.log("sinifConfig", sinifConfig);
+				var beklenenIndex = indexOfMax(output);
+				console.log("beklenenIndex", beklenenIndex);
+				var returnJson = {'sensorVeri': [deneyAlanlari[deneyAlanlari.length-1]["sensor1Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor2Alan"]
+				, deneyAlanlari[deneyAlanlari.length-1]["sensor3Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor4Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor5Alan"]
+				, deneyAlanlari[deneyAlanlari.length-1]["sensor6Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor7Alan"]]
+				, 'beklenen': deneyAlanlari[deneyAlanlari.length-1]["koklamaSinifi"], 'sonuc': sinifConfig.siniflar[beklenenIndex]};
+
+	 		 	res.send(returnJson);
+			});
 	 	});
 	});
 	

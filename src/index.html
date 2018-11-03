@@ -345,15 +345,15 @@ body {
           <td>Sonuç</td>
         </tr>
         <tr>
-          <td>14566</td>
-          <td>298752</td>
-          <td>5204</td>
-          <td>170124</td>
-          <td>1020021</td>
-          <td>34012</td>
-          <td>8294</td>
-          <td>A</td>
-          <td>A</td>
+          <td>{{deneySonucu.sensorVeri[0]}}</td>
+          <td>{{deneySonucu.sensorVeri[1]}}</td>
+          <td>{{deneySonucu.sensorVeri[2]}}</td>
+          <td>{{deneySonucu.sensorVeri[3]}}</td>
+          <td>{{deneySonucu.sensorVeri[4]}}</td>
+          <td>{{deneySonucu.sensorVeri[5]}}</td>
+          <td>{{deneySonucu.sensorVeri[6]}}</td>
+          <td>{{deneySonucu.beklenen}}</td>
+          <td>{{deneySonucu.sonuc}}</td>
         </tr>
       </table>
       </div>
@@ -391,6 +391,7 @@ body {
       $scope.yeniProjeIsmi = "";
       $scope.secilenProjeModelleri;
       $scope.secilenDeney;
+      $scope.deneySonucu;
       $scope.secilenKoklamaTuru = {};
       $scope.turler = [{
         'name': 'Eğitim Verisi',
@@ -408,9 +409,8 @@ body {
       $scope.deneySonucuUret = function(){
         var data = {'proje': $scope.secilenProje, 'model': $scope.secilenProjeModeli , 'deney': $scope.secilenDeney};
         $http.post("deneySonucuUret", data).then(function (response) {
-          if (response.data=="Başarılı") {
-
-          }
+          console.log("response.data", response.data);
+          $scope.deneySonucu = response.data;
         }).catch(function (error) {
               console.log("Error ", error);
         });
