@@ -106,20 +106,25 @@ app.post('/src/deneySonucuUret', function(req, res){
 			 function(err, yeniContent) {
 		 	if (err) return console.log('Seçilen Koklama Getirilemedi: ' + err);
 		 	var deneyAlanlari = JSON.parse(yeniContent);
-		 	var myNet = Network.fromJSON(networkJson);
+		 	var myNet = new Network.fromJSON(networkJson);
 		 	var trainer = new Trainer(myNet);
 		 	//var standalone = myNet.standalone();
 		 	console.log("myNet ", myNet);
 		 	console.log("deneyAlanlari ", deneyAlanlari[deneyAlanlari.length-1]);
+		 	console.log("sensor1Alan ", deneyAlanlari[deneyAlanlari.length-1]["sensor1Alan"]);
 		 	/*var output0 = standalone([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
 			, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
 			, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);*/
-		 	var output = myNet.activate([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
-			, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
-			, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);
+			//var output2 = trainer.activate([deneyAlanlari["sensor1Alan"], deneyAlanlari["sensor2Alan"]
+			//, deneyAlanlari["sensor3Alan"], deneyAlanlari["sensor4Alan"], deneyAlanlari["sensor5Alan"]
+			//, deneyAlanlari["sensor6Alan"], deneyAlanlari["sensor7Alan"]]);
+		 	var output = myNet.activate([deneyAlanlari[deneyAlanlari.length-1]["sensor1Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor2Alan"]
+			, deneyAlanlari[deneyAlanlari.length-1]["sensor3Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor4Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor5Alan"]
+			, deneyAlanlari[deneyAlanlari.length-1]["sensor6Alan"], deneyAlanlari[deneyAlanlari.length-1]["sensor7Alan"]]);
 			
 		 	//console.log("output0 ", output0);
 		 	console.log("output ", output);
+		 	//console.log("output2 ", output2);
 
  		 	res.send(output);
 	 	});
@@ -203,7 +208,19 @@ app.post('/src/ogren', function(req, res){
 	    });
 		
 		function modelEgit() {
-		    var myNet = new Architect.Perceptron(7, req.body.gizliKatmanHucreSayisi, cfgJson["sinifSayisi"]);
+			//Architect.Perceptron denince json kaydet ve oku sorunlu*
+		    //var myNet = new Architect.Perceptron(7, req.body.gizliKatmanHucreSayisi, cfgJson["sinifSayisi"]);
+		    var inputLayer = new Layer(7);
+			var hiddenLayer = new Layer(req.body.gizliKatmanHucreSayisi);
+			var outputLayer = new Layer(cfgJson["sinifSayisi"]);
+
+			inputLayer.project(hiddenLayer);
+			hiddenLayer.project(outputLayer);
+		    var myNet = new Network({
+				input: inputLayer,
+				hidden: [hiddenLayer],
+				output: outputLayer
+			});
 			var trainer = new Trainer(myNet);
 
 			//console.log("cfgJson siniflar", cfgJson["siniflar"]);
