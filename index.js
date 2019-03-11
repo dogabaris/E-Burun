@@ -169,25 +169,30 @@ app.post('/src/deneySonucuUret', function(req, res){
 	
 });
 app.post('/src/ysaModelleriGetir', function(req, res){
+	console.log(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\model" + " Modeli istendi.");
 	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\model", function (err, files) {
     if (err) {
-        return console.log('Modeller Getirilemedi: ' + err);
-    }
-    var targetFiles = files.filter(function(file) {
+        console.log('Modeller Getirilemedi: ' + err);
+        res.send("Modeller Getirilemedi.");
+    } else {	
+    	var targetFiles = files.filter(function(file) {
 		    return path.extname(file).toLowerCase() === '';
-	});
-    res.send(targetFiles);
+		});
+	    res.send(targetFiles);
+    }
 	});
 });
 app.post('/src/deneyIsimleriniGetir', function(req,res){
 	fs.readdir(applicationDir + "\\src\\projeler\\" + req.body.secilenProje + "\\yeni", function (err, files) {
 	    if (err) {
-	        return console.log('Deney İsimleri Getirilemedi: ' + err);
-	    }
-	    var targetFiles = files.filter(function(file) {
+	        console.log('Deney İsimleri Getirilemedi: ' + err);
+	        res.send("Deneyler Getirilemedi.");
+	    } else {
+	    	var targetFiles = files.filter(function(file) {
 			    return path.extname(file).toLowerCase() === '.json';
-		});
-	    res.send(targetFiles);
+			});
+		    res.send(targetFiles);
+	    }
 	});
 });
 app.post('/src/modelBasarimlariGetir', function(req, res){
@@ -379,12 +384,20 @@ app.post('/src/yeniProjeOlustur', function(req, res){
 	console.log("siniflar ", siniflar);
 
 	var dir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi;
+	var egitimDir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi + "\\egitim";
+	var modelDir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi + "\\model";
+	var testDir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi + "\\test";
+	var yeniDir = applicationDir + "\\src\\projeler\\" + req.body.projeAdi + "\\yeni";
 	var projeSinifConfig = {};
 	projeSinifConfig["siniflar"] = siniflar;
 	projeSinifConfig["sinifSayisi"] = siniflar.length;
 
 	if (!fs.existsSync(dir)){
 	    fs.mkdirSync(dir);
+	    fs.mkdirSync(egitimDir);
+	    fs.mkdirSync(modelDir);
+	    fs.mkdirSync(testDir);
+	    fs.mkdirSync(yeniDir);
 	    fs.writeFile(dir + "\\ProjeSinifConfig.cfg", JSON.stringify(projeSinifConfig), (err) => {
 			    if (err) throw err;
 
